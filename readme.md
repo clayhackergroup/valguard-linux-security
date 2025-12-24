@@ -68,7 +68,7 @@ VALGUARD v4.0 is a **professional-grade, advanced Linux security auditing and th
 
 ```bash
 # Clone or navigate to the directory
-cd /home/clay/linux-sec/valguard
+cd /home/clay/linux-sec/valguard-linux-security/valguard
 
 # Make install script executable
 chmod +x install.sh
