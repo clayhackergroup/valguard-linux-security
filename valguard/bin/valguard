@@ -1,0 +1,862 @@
+#!/usr/bin/env python3
+"""
+VALGUARD v4.0 - ADVANCED INTERACTIVE LINUX SECURITY SHELL
+Professional System Scanning & Threat Detection
+Clay Security Team © 2025
+"""
+
+import sys, os, json, subprocess, re, glob, socket, struct, fcntl
+from datetime import datetime
+from pathlib import Path
+from collections import defaultdict
+
+BANNER = r"""
+                                       ###
+                                 ###############
+                           ############   ############
+                     ############     #####     ############
+               ############    .#################     ############
+           ,#########     #############################     #########
+           #####    #########################################    #####
+          #####  ###############################################  ####
+          #####  ##################   #####   ##################  #####
+          ##### ,################  ###########  ################* ##(((
+          ##### ,###############  #############  ###############* (((((
+          ##### ,###############  #############. ##############(, (((((
+          #####  ###############                 ############(((  (((((
+           ####  ############, ,#################, #######((((((  ((((
+           ##### ############  ########   ########  ####(((((((( (((((
+           #####  ###########  ######. ###  ######  #((((((((((  (((((
+            ##### .##########  #######     #######  ((((((((((. (((((
+             ####. ##########  ######### #######((  (((((((((( (((((
+             #####  #########  ###############((((  ((((((((( /((((.
+              *##### ,########  ###########((((((  ((((((((, (((((/
+                ##### ##########               ((((((((((  (((((
+                 ######  #############((((((((((((((((((  ((((((
+                  .#####,  #########((((((((((((((((((  .(((((
+                    (######  ####(((((((((((((((((((  ((((((
+                       #######   (((((((((((((((   (((((((
+                         ###(((((    (((((((   /((((((((
+                             (((((((((/   /(((((((((
+                                 (((((((((((((((
+
+    VALGUARD v4.0 - ADVANCED LINUX SECURITY SHELL
+    Professional System Scanning & Threat Detection
+    Clay Security Team © 2025
+"""
+
+class Colors:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    END = '\033[0m'
+    GRAY = '\033[90m'
+    MAGENTA = '\033[35m'
+
+class AdvancedValguard:
+    def __init__(self):
+        self.timestamp = datetime.now().isoformat()
+        self.running = True
+        self.results = {}
+        self.threats_found = []
+        self.vulnerabilities = []
+        self.recommendations = []
+        
+    def print_banner(self):
+        print(f"{Colors.BOLD}{Colors.CYAN}{BANNER}{Colors.END}")
+        print(f"{Colors.BOLD}{Colors.RED}{'═'*80}{Colors.END}")
+        print(f"{Colors.BOLD}{Colors.RED}VALGUARD v4.0 - Advanced Security Shell{Colors.END}")
+        print(f"{Colors.BOLD}{Colors.RED}Type 'help' for commands | 'exit' to quit{Colors.END}")
+        print(f"{Colors.BOLD}{Colors.RED}{'═'*80}{Colors.END}\n")
+    
+    def success(self, msg): print(f"{Colors.GREEN}[✓]{Colors.END} {msg}")
+    def error(self, msg): print(f"{Colors.RED}[✗]{Colors.END} {msg}")
+    def info(self, msg): print(f"{Colors.BLUE}[•]{Colors.END} {msg}")
+    def warn(self, msg): print(f"{Colors.YELLOW}[!]{Colors.END} {msg}")
+    def threat(self, msg): print(f"{Colors.BOLD}{Colors.RED}[THREAT]{Colors.END} {msg}")
+    def recommend(self, msg): print(f"{Colors.MAGENTA}[→]{Colors.END} {msg}")
+    
+    def run_cmd(self, cmd):
+        """Run shell command safely"""
+        try:
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=15)
+            return result.stdout.strip()
+        except subprocess.TimeoutExpired:
+            return "TIMEOUT"
+        except Exception as e:
+            return f"Error: {e}"
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # ADVANCED PORT SCANNING
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def scan_ports_advanced(self):
+        """Advanced port scanning with service detection"""
+        print("\n" + "="*80)
+        print(f"{Colors.BOLD}ADVANCED PORT SCANNING & SERVICE DETECTION{Colors.END}")
+        print("="*80)
+        
+        self.info("Scanning listening ports and services...")
+        
+        # Get all listening ports
+        listening = self.run_cmd("ss -tlnp 2>/dev/null")
+        established = self.run_cmd("ss -tan | grep ESTAB")
+        
+        open_ports = []
+        print(f"\n{Colors.CYAN}LISTENING PORTS:{Colors.END}")
+        print("-" * 80)
+        
+        if listening:
+            for line in listening.split('\n')[1:]:
+                if line.strip():
+                    parts = line.split()
+                    if len(parts) >= 4:
+                        proto = parts[0]
+                        local = parts[3]
+                        pid = parts[-1] if len(parts) > 4 else "N/A"
+                        print(f"  {proto:6} {local:30} {pid}")
+                        open_ports.append(local)
+        
+        if not listening or len(open_ports) == 0:
+            self.warn("No listening ports detected")
+        else:
+            self.success(f"Found {len(open_ports)} listening ports")
+        
+        # Established connections
+        print(f"\n{Colors.CYAN}ESTABLISHED CONNECTIONS:{Colors.END}")
+        print("-" * 80)
+        
+        if established:
+            conn_count = 0
+            for line in established.split('\n')[:10]:
+                if line.strip():
+                    print(f"  {line}")
+                    conn_count += 1
+            if established.split('\n').__len__() > 10:
+                print(f"  ... and {len(established.split('\n')) - 10} more")
+        else:
+            self.info("No established connections")
+        
+        # Service detection
+        print(f"\n{Colors.CYAN}SERVICE DETECTION:{Colors.END}")
+        print("-" * 80)
+        
+        services = self.run_cmd("netstat -tulpn 2>/dev/null | grep LISTEN")
+        if services:
+            service_list = []
+            for line in services.split('\n'):
+                if line.strip():
+                    service_list.append(line)
+            self.success(f"Detected {len(service_list)} active services")
+            for svc in service_list[:15]:
+                print(f"  {svc[:75]}")
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # ADVANCED NETWORK ANALYSIS
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def scan_network_advanced(self):
+        """Advanced network threat detection and analysis"""
+        print("\n" + "="*80)
+        print(f"{Colors.BOLD}ADVANCED NETWORK THREAT ANALYSIS{Colors.END}")
+        print("="*80)
+        
+        self.info("Performing comprehensive network analysis...")
+        
+        # Network interfaces
+        print(f"\n{Colors.CYAN}NETWORK INTERFACES:{Colors.END}")
+        print("-" * 80)
+        
+        ifaces = self.run_cmd("ip link show | grep -E '^[0-9]+:' | awk '{print $2}' | tr -d ':'")
+        if ifaces:
+            for iface in ifaces.split('\n'):
+                if iface:
+                    ip = self.run_cmd(f"ip addr show {iface} | grep 'inet ' | awk '{{print $2}}'")
+                    mac = self.run_cmd(f"ip link show {iface} | grep 'link/ether' | awk '{{print $2}}'")
+                    print(f"  {Colors.CYAN}{iface}{Colors.END}: {ip if ip else 'N/A'} ({mac if mac else 'N/A'})")
+        
+        # DNS Configuration
+        print(f"\n{Colors.CYAN}DNS CONFIGURATION:{Colors.END}")
+        print("-" * 80)
+        
+        dns = self.run_cmd("cat /etc/resolv.conf 2>/dev/null | grep nameserver")
+        if dns:
+            for server in dns.split('\n'):
+                print(f"  {server}")
+        
+        # Routing table
+        print(f"\n{Colors.CYAN}ROUTING TABLE:{Colors.END}")
+        print("-" * 80)
+        
+        routes = self.run_cmd("ip route | head -10")
+        if routes:
+            for route in routes.split('\n'):
+                print(f"  {route}")
+        
+        # ARP table
+        print(f"\n{Colors.CYAN}ARP TABLE:{Colors.END}")
+        print("-" * 80)
+        
+        arp = self.run_cmd("arp -n | head -15")
+        if arp:
+            for entry in arp.split('\n'):
+                print(f"  {entry}")
+        
+        # Suspicious connections
+        print(f"\n{Colors.CYAN}CONNECTION ANALYSIS:{Colors.END}")
+        print("-" * 80)
+        
+        suspicious_ips = []
+        conns = self.run_cmd("netstat -tan 2>/dev/null | grep -E 'ESTABLISHED|TIME_WAIT'")
+        
+        if conns:
+            conn_count = 0
+            for conn in conns.split('\n')[:20]:
+                if conn.strip():
+                    print(f"  {conn[:70]}")
+                    conn_count += 1
+            
+            if len(conns.split('\n')) > 20:
+                self.warn(f"Total connections: {len(conns.split('\n'))}")
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # ADVANCED VULNERABILITY SCANNING
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def scan_vulnerabilities(self):
+        """Comprehensive vulnerability assessment"""
+        print("\n" + "="*80)
+        print(f"{Colors.BOLD}COMPREHENSIVE VULNERABILITY ASSESSMENT{Colors.END}")
+        print("="*80)
+        
+        vuln_count = 0
+        
+        # Weak permissions
+        print(f"\n{Colors.CYAN}FILE PERMISSION VULNERABILITIES:{Colors.END}")
+        print("-" * 80)
+        
+        world_readable = self.run_cmd("find /etc -type f -perm -004 2>/dev/null | head -10")
+        if world_readable:
+            self.error("World-readable sensitive files detected:")
+            for f in world_readable.split('\n')[:10]:
+                if f:
+                    print(f"  {f}")
+                    vuln_count += 1
+        
+        world_writable = self.run_cmd("find / -perm -002 -type f 2>/dev/null | grep -v proc | head -10")
+        if world_writable:
+            self.error("World-writable files detected:")
+            for f in world_writable.split('\n')[:10]:
+                if f:
+                    print(f"  {f}")
+                    vuln_count += 1
+        
+        # SUID/SGID files
+        print(f"\n{Colors.CYAN}SUID/SGID BINARIES:{Colors.END}")
+        print("-" * 80)
+        
+        suid = self.run_cmd("find / -perm -4000 -type f 2>/dev/null | head -15")
+        if suid:
+            self.warn(f"SUID binaries found:")
+            for f in suid.split('\n')[:15]:
+                if f:
+                    print(f"  {f}")
+                    vuln_count += 1
+        
+        sgid = self.run_cmd("find / -perm -2000 -type f 2>/dev/null | head -10")
+        if sgid:
+            self.warn(f"SGID binaries found:")
+            for f in sgid.split('\n')[:10]:
+                if f:
+                    print(f"  {f}")
+                    vuln_count += 1
+        
+        # Empty password accounts
+        print(f"\n{Colors.CYAN}ACCOUNT SECURITY:{Colors.END}")
+        print("-" * 80)
+        
+        empty_pwd = self.run_cmd("awk -F':' '($2 == \"\") {print $1}' /etc/shadow 2>/dev/null")
+        if empty_pwd:
+            self.error("Users without passwords:")
+            for user in empty_pwd.split('\n'):
+                if user:
+                    print(f"  {user}")
+                    vuln_count += 1
+        else:
+            self.success("All users have password protection")
+        
+        # Sudo misconfiguration
+        print(f"\n{Colors.CYAN}SUDO CONFIGURATION:{Colors.END}")
+        print("-" * 80)
+        
+        sudo_nopass = self.run_cmd("grep -r 'NOPASSWD' /etc/sudoers* 2>/dev/null")
+        if sudo_nopass:
+            self.error("Sudo NOPASSWD entries detected:")
+            for entry in sudo_nopass.split('\n')[:5]:
+                if entry:
+                    print(f"  {entry}")
+                    vuln_count += 1
+        else:
+            self.success("No NOPASSWD sudo entries found")
+        
+        # Weak SSH keys
+        print(f"\n{Colors.CYAN}SSH KEY ANALYSIS:{Colors.END}")
+        print("-" * 80)
+        
+        weak_keys = self.run_cmd("find / -name '*id_rsa' -o -name '*id_dsa' 2>/dev/null | head -10")
+        if weak_keys:
+            self.warn(f"Private SSH keys found:")
+            for key in weak_keys.split('\n')[:10]:
+                if key:
+                    perms = self.run_cmd(f"stat -c %a {key}")
+                    print(f"  {key} (perms: {perms})")
+        
+        # Capabilities
+        print(f"\n{Colors.CYAN}BINARY CAPABILITIES:{Colors.END}")
+        print("-" * 80)
+        
+        caps = self.run_cmd("getcap -r / 2>/dev/null | head -15")
+        if caps:
+            self.warn("Binaries with capabilities:")
+            for cap in caps.split('\n')[:15]:
+                if cap:
+                    print(f"  {cap}")
+                    vuln_count += 1
+        
+        self.info(f"Total vulnerabilities found: {vuln_count}")
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # ADVANCED MALWARE & ROOTKIT DETECTION
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def scan_malware_advanced(self):
+        """Advanced malware and rootkit detection"""
+        print("\n" + "="*80)
+        print(f"{Colors.BOLD}ADVANCED MALWARE & ROOTKIT DETECTION{Colors.END}")
+        print("="*80)
+        
+        threat_count = 0
+        
+        # Dangerous file locations
+        print(f"\n{Colors.CYAN}SUSPICIOUS FILE LOCATIONS:{Colors.END}")
+        print("-" * 80)
+        
+        dangerous_locs = {
+            '/tmp': ['*.sh', '*backdoor*', '*rootkit*', '*.exe'],
+            '/var/tmp': ['*.*', '.*'],
+            '/dev/shm': ['*.*', '.*'],
+            '/var/lib': ['*malware*', '*virus*', '*trojan*']
+        }
+        
+        for location, patterns in dangerous_locs.items():
+            if os.path.exists(location):
+                for pattern in patterns:
+                    files = self.run_cmd(f"find {location} -name '{pattern}' -type f 2>/dev/null | head -5")
+                    if files and files != '':
+                        self.threat(f"Suspicious files in {location}:")
+                        for f in files.split('\n')[:5]:
+                            if f:
+                                print(f"  {f}")
+                                threat_count += 1
+        
+        # Hidden files check
+        print(f"\n{Colors.CYAN}HIDDEN FILES IN CRITICAL DIRS:{Colors.END}")
+        print("-" * 80)
+        
+        critical = ['/root', '/home', '/etc', '/usr/local/bin']
+        for cdir in critical:
+            if os.path.exists(cdir):
+                hidden = self.run_cmd(f"find {cdir} -name '.*' -type f 2>/dev/null | grep -v '\\./$' | grep -v '\\.\\./$' | wc -l")
+                if hidden and int(hidden) > 5:
+                    self.warn(f"Excessive hidden files in {cdir}: {hidden}")
+        
+        # Process analysis
+        print(f"\n{Colors.CYAN}SUSPICIOUS PROCESS DETECTION:{Colors.END}")
+        print("-" * 80)
+        
+        suspicious_procs = ['nc', 'ncat', 'nmap', 'msfconsole', 'wireshark', 'nikto', 
+                           'sqlmap', 'metasploit', 'hashcat', 'john', '/dev/tcp', '/dev/udp']
+        
+        for proc in suspicious_procs:
+            found = self.run_cmd(f"pgrep -f '{proc}' 2>/dev/null")
+            if found and found != '':
+                self.threat(f"SUSPICIOUS PROCESS DETECTED: {proc}")
+                threat_count += 1
+        
+        # Kernel modules analysis
+        print(f"\n{Colors.CYAN}KERNEL MODULE ANALYSIS:{Colors.END}")
+        print("-" * 80)
+        
+        modules = self.run_cmd("lsmod | wc -l")
+        self.info(f"Loaded kernel modules: {modules}")
+        
+        suspicious_modules = self.run_cmd("lsmod | grep -iE 'rootkit|backdoor|trojan|malware|virus'")
+        if suspicious_modules:
+            self.error("Suspicious kernel modules:")
+            print(f"  {suspicious_modules}")
+            threat_count += 1
+        
+        # Cron jobs analysis
+        print(f"\n{Colors.CYAN}CRON JOB ANALYSIS:{Colors.END}")
+        print("-" * 80)
+        
+        cron_jobs = self.run_cmd("for user in $(cut -f1 -d: /etc/passwd); do crontab -u $user -l 2>/dev/null; done | head -20")
+        if cron_jobs:
+            print(f"  Cron jobs found:")
+            for job in cron_jobs.split('\n')[:10]:
+                if job and not job.startswith('#'):
+                    print(f"    {job[:70]}")
+        
+        # LKM (Loadable Kernel Module) check
+        print(f"\n{Colors.CYAN}LOADABLE KERNEL MODULE VERIFICATION:{Colors.END}")
+        print("-" * 80)
+        
+        lkm_status = self.run_cmd("cat /proc/sys/kernel/modules | head -1")
+        self.info(f"Kernel module loading: {'ENABLED' if lkm_status else 'DISABLED'}")
+        
+        self.info(f"Total malware-related threats: {threat_count}")
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # SECURITY HARDENING RECOMMENDATIONS
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def generate_recommendations(self):
+        """Generate security hardening recommendations"""
+        print("\n" + "="*80)
+        print(f"{Colors.BOLD}SECURITY HARDENING RECOMMENDATIONS{Colors.END}")
+        print("="*80)
+        
+        recommendations = []
+        
+        # Kernel hardening
+        aslr = self.run_cmd("cat /proc/sys/kernel/randomize_va_space")
+        if aslr != '2':
+            recommendations.append("Enable ASLR: echo 2 > /proc/sys/kernel/randomize_va_space")
+        
+        # SELinux check
+        selinux = self.run_cmd("getenforce 2>/dev/null")
+        if selinux == 'Disabled' or selinux == '':
+            recommendations.append("Enable SELinux for mandatory access control")
+        
+        # AppArmor check
+        apparmor = self.run_cmd("aa-status 2>/dev/null | head -1")
+        if not apparmor:
+            recommendations.append("Install and enable AppArmor for application sandboxing")
+        
+        # Firewall
+        fw = self.run_cmd("ufw status 2>/dev/null | head -1")
+        if 'inactive' in fw.lower():
+            recommendations.append("Enable firewall: ufw enable")
+        
+        # Fail2Ban
+        fail2ban = self.run_cmd("systemctl is-active fail2ban 2>/dev/null")
+        if fail2ban != 'active':
+            recommendations.append("Install Fail2Ban for intrusion prevention")
+        
+        # SSH hardening
+        ssh_root = self.run_cmd("grep '^PermitRootLogin' /etc/ssh/sshd_config 2>/dev/null")
+        if 'yes' in ssh_root.lower():
+            recommendations.append("Disable SSH root login: PermitRootLogin no")
+        
+        ssh_pwd = self.run_cmd("grep '^PasswordAuthentication' /etc/ssh/sshd_config 2>/dev/null")
+        if 'yes' in ssh_pwd.lower():
+            recommendations.append("Disable SSH password authentication: PasswordAuthentication no")
+        
+        # Update system
+        updates = self.run_cmd("apt list --upgradable 2>/dev/null | wc -l")
+        if updates and int(updates) > 0:
+            recommendations.append(f"Install pending security updates ({updates} packages)")
+        
+        # File integrity monitoring
+        aide = self.run_cmd("which aide")
+        if not aide:
+            recommendations.append("Install AIDE for file integrity monitoring")
+        
+        # Log monitoring
+        auditd = self.run_cmd("systemctl is-active auditd 2>/dev/null")
+        if auditd != 'active':
+            recommendations.append("Enable auditd for comprehensive logging")
+        
+        # Print recommendations
+        if recommendations:
+            self.warn(f"Found {len(recommendations)} security recommendations:")
+            for i, rec in enumerate(recommendations, 1):
+                self.recommend(f"{i}. {rec}")
+        else:
+            self.success("No critical hardening recommendations")
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # SYSTEM BASELINE & COMPLIANCE CHECK
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def compliance_check(self):
+        """Security compliance baseline check"""
+        print("\n" + "="*80)
+        print(f"{Colors.BOLD}SECURITY COMPLIANCE BASELINE{Colors.END}")
+        print("="*80)
+        
+        compliance_score = 0
+        total_checks = 10
+        
+        print(f"\n{Colors.CYAN}BASELINE CHECKS:{Colors.END}")
+        print("-" * 80)
+        
+        # Check 1: Password policy
+        pwd_policy = self.run_cmd("grep PASS_MAX_DAYS /etc/login.defs 2>/dev/null")
+        if pwd_policy:
+            compliance_score += 1
+            self.success("Password expiration policy configured")
+        else:
+            self.error("Password expiration policy not configured")
+        
+        # Check 2: Sudo logging
+        sudo_logging = self.run_cmd("grep -E 'log_output|log_input' /etc/sudoers 2>/dev/null")
+        if sudo_logging:
+            compliance_score += 1
+            self.success("Sudo logging enabled")
+        else:
+            self.warn("Sudo logging not configured")
+        
+        # Check 3: Account lockout
+        lockout = self.run_cmd("grep pam_faillock /etc/pam.d/common-auth 2>/dev/null")
+        if lockout:
+            compliance_score += 1
+            self.success("Account lockout policy enabled")
+        else:
+            self.warn("Account lockout policy not configured")
+        
+        # Check 4: Umask
+        umask = self.run_cmd("grep '^umask' /etc/login.defs 2>/dev/null")
+        if umask and '077' in umask:
+            compliance_score += 1
+            self.success("Restrictive umask configured")
+        else:
+            self.warn("Umask should be 077")
+        
+        # Check 5: SSH protocol version
+        ssh_version = self.run_cmd("grep '^Protocol' /etc/ssh/sshd_config 2>/dev/null")
+        if 'Protocol 2' in ssh_version or not ssh_version:
+            compliance_score += 1
+            self.success("SSH using protocol 2")
+        else:
+            self.error("SSH protocol not properly configured")
+        
+        # Check 6: Secure kernel parameters
+        kp_icmp = self.run_cmd("cat /proc/sys/net/ipv4/icmp_echo_ignore_all")
+        kp_forward = self.run_cmd("cat /proc/sys/net/ipv4/ip_forward")
+        if kp_icmp == '0' and kp_forward == '0':
+            compliance_score += 1
+            self.success("Kernel parameters hardened")
+        else:
+            self.warn("Kernel parameters could be hardened")
+        
+        # Check 7: File permissions on critical files
+        crit_files = ['/etc/shadow', '/etc/gshadow', '/etc/passwd']
+        crit_good = True
+        for cfile in crit_files:
+            if os.path.exists(cfile):
+                perms = self.run_cmd(f"stat -c %a {cfile}")
+                if perms not in ['600', '640', '644']:
+                    crit_good = False
+                    break
+        if crit_good:
+            compliance_score += 1
+            self.success("Critical file permissions properly configured")
+        else:
+            self.warn("Critical file permissions need review")
+        
+        # Check 8: Intrusion detection
+        ids_check = self.run_cmd("which aide 2>/dev/null || which tripwire 2>/dev/null")
+        if ids_check:
+            compliance_score += 1
+            self.success("File integrity monitoring installed")
+        else:
+            self.warn("No file integrity monitoring detected")
+        
+        # Check 9: Audit logging
+        audit_check = self.run_cmd("systemctl is-active auditd 2>/dev/null")
+        if audit_check == 'active':
+            compliance_score += 1
+            self.success("Audit logging active")
+        else:
+            self.warn("Audit logging not active")
+        
+        # Check 10: Encrypted connections
+        tls_check = self.run_cmd("openssl version 2>/dev/null")
+        if tls_check:
+            compliance_score += 1
+            self.success("TLS/SSL support available")
+        else:
+            self.warn("OpenSSL not found")
+        
+        # Compliance score
+        score_percent = (compliance_score / total_checks) * 100
+        print(f"\n{'='*80}")
+        print(f"COMPLIANCE SCORE: {Colors.BOLD}{score_percent:.0f}%{Colors.END} ({compliance_score}/{total_checks})")
+        print(f"{'='*80}\n")
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # SYSTEM INFORMATION & DETAILED REPORTING
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def detailed_system_info(self):
+        """Comprehensive system information"""
+        print("\n" + "="*80)
+        print(f"{Colors.BOLD}DETAILED SYSTEM INFORMATION{Colors.END}")
+        print("="*80)
+        
+        # OS Info
+        print(f"\n{Colors.CYAN}OPERATING SYSTEM:{Colors.END}")
+        print("-" * 80)
+        
+        hostname = self.run_cmd("hostname")
+        os_info = self.run_cmd("cat /etc/os-release | grep PRETTY_NAME | cut -d'=' -f2")
+        kernel = self.run_cmd("uname -r")
+        kernel_full = self.run_cmd("uname -a")
+        
+        print(f"  Hostname: {hostname}")
+        print(f"  OS: {os_info.strip('\"')}")
+        print(f"  Kernel: {kernel}")
+        
+        # Hardware
+        print(f"\n{Colors.CYAN}HARDWARE:{Colors.END}")
+        print("-" * 80)
+        
+        cpu = self.run_cmd("lscpu | grep 'Model name' | cut -d':' -f2 | xargs")
+        cores = self.run_cmd("nproc")
+        ram = self.run_cmd("free -h | grep '^Mem' | awk '{print $2}'")
+        disk = self.run_cmd("df -h / | awk 'NR==2 {print $3 \" / \" $2}'")
+        
+        print(f"  CPU: {cpu}")
+        print(f"  Cores: {cores}")
+        print(f"  RAM: {ram}")
+        print(f"  Disk: {disk}")
+        
+        # Boot & Uptime
+        print(f"\n{Colors.CYAN}UPTIME & BOOT:{Colors.END}")
+        print("-" * 80)
+        
+        uptime = self.run_cmd("uptime -p")
+        lastboot = self.run_cmd("last reboot | head -1")
+        
+        print(f"  Uptime: {uptime}")
+        print(f"  Last Boot: {lastboot}")
+        
+        # Users & Groups
+        print(f"\n{Colors.CYAN}USER ACCOUNTS:{Colors.END}")
+        print("-" * 80)
+        
+        user_count = self.run_cmd("cat /etc/passwd | wc -l")
+        active_users = self.run_cmd("who | awk '{print $1}' | sort -u | wc -l")
+        
+        print(f"  Total Users: {user_count}")
+        print(f"  Active Sessions: {active_users}")
+        
+        users = self.run_cmd("awk -F':' '$3 >= 1000 {print $1}' /etc/passwd | head -10")
+        if users:
+            print(f"  Regular Users:")
+            for user in users.split('\n'):
+                if user:
+                    print(f"    - {user}")
+        
+        # Environment
+        print(f"\n{Colors.CYAN}ENVIRONMENT:{Colors.END}")
+        print("-" * 80)
+        
+        locale = self.run_cmd("locale | head -1")
+        tz = self.run_cmd("timedatectl | grep 'Time zone' | awk '{print $3}'")
+        
+        print(f"  Locale: {locale}")
+        print(f"  Timezone: {tz}")
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # COMPREHENSIVE SECURITY AUDIT
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def full_security_audit(self):
+        """Execute comprehensive security audit"""
+        print("\n" + "="*80)
+        print(f"{Colors.BOLD}COMPREHENSIVE SECURITY AUDIT{Colors.END}")
+        print("="*80 + "\n")
+        
+        print(f"{Colors.YELLOW}Starting full system security assessment...{Colors.END}\n")
+        
+        self.detailed_system_info()
+        self.scan_ports_advanced()
+        self.scan_network_advanced()
+        self.scan_vulnerabilities()
+        self.scan_malware_advanced()
+        self.compliance_check()
+        self.generate_recommendations()
+        
+        # Final report
+        print("\n" + "="*80)
+        print(f"{Colors.BOLD}AUDIT FINAL REPORT{Colors.END}")
+        print("="*80)
+        
+        print(f"\nAudit Timestamp: {self.timestamp}")
+        print(f"Total Threats Found: {len(self.threats_found)}")
+        print(f"Total Vulnerabilities: {len(self.vulnerabilities)}")
+        print(f"\nStatus: {Colors.GREEN}AUDIT COMPLETE{Colors.END}\n")
+        print("="*80 + "\n")
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # HELP & COMMANDS
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def show_help(self):
+        """Show available commands"""
+        help_text = f"""
+{Colors.BOLD}{Colors.CYAN}VALGUARD v4.0 - ADVANCED SECURITY SHELL{Colors.END}
+
+{Colors.RED}COMPREHENSIVE SCANNING:{Colors.END}
+  fullaudit         Complete security audit with all checks
+  audit             Standard security audit
+  
+{Colors.RED}SPECIALIZED SCANS:{Colors.END}
+  ports             Advanced port scanning & service detection
+  network           Advanced network threat analysis
+  vulns             Comprehensive vulnerability assessment
+  malware           Advanced malware & rootkit detection
+  compliance        Security compliance baseline check
+  hardening         Security hardening recommendations
+  
+{Colors.RED}SYSTEM INFORMATION:{Colors.END}
+  info              Detailed system information
+  status            Quick security status
+  users             User accounts audit
+  processes         Process analysis
+  logs              System log analysis
+  
+{Colors.RED}UTILITY COMMANDS:{Colors.END}
+  help              Show this menu
+  clear             Clear screen
+  exit              Exit shell
+
+{Colors.RED}EXAMPLES:{Colors.END}
+  valguard> fullaudit
+  valguard> ports
+  valguard> network
+  valguard> vulns
+  valguard> compliance
+  
+{Colors.BOLD}Clay Security Team © 2025 - Advanced v4.0{Colors.END}
+"""
+        print(help_text)
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # INTERACTIVE SHELL
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def interactive_shell(self):
+        """Run interactive security shell"""
+        self.print_banner()
+        
+        while self.running:
+            try:
+                cmd = input(f"{Colors.BOLD}{Colors.RED}valguard{Colors.END}> ").strip().lower()
+                
+                if not cmd:
+                    continue
+                
+                if cmd == 'exit' or cmd == 'quit':
+                    print(f"\n{Colors.GREEN}Exiting VALGUARD...{Colors.END}\n")
+                    self.running = False
+                
+                elif cmd == 'help' or cmd == '?':
+                    self.show_help()
+                
+                elif cmd == 'clear' or cmd == 'cls':
+                    os.system('clear' if os.name != 'nt' else 'cls')
+                    self.print_banner()
+                
+                elif cmd == 'fullaudit':
+                    self.full_security_audit()
+                
+                elif cmd == 'audit':
+                    self.scan_ports_advanced()
+                    self.scan_network_advanced()
+                    self.scan_vulnerabilities()
+                
+                elif cmd == 'ports':
+                    self.scan_ports_advanced()
+                
+                elif cmd == 'network':
+                    self.scan_network_advanced()
+                
+                elif cmd == 'vulns':
+                    self.scan_vulnerabilities()
+                
+                elif cmd == 'malware':
+                    self.scan_malware_advanced()
+                
+                elif cmd == 'compliance':
+                    self.compliance_check()
+                
+                elif cmd == 'hardening':
+                    self.generate_recommendations()
+                
+                elif cmd == 'info':
+                    self.detailed_system_info()
+                
+                elif cmd == 'status':
+                    self.scan_ports_advanced()
+                
+                elif cmd == 'users':
+                    users = self.run_cmd("awk -F':' '{print $1}' /etc/passwd")
+                    print(f"\nSystem Users: {len(users.split())}")
+                    for user in users.split()[:20]:
+                        print(f"  - {user}")
+                
+                elif cmd == 'processes':
+                    procs = self.run_cmd("ps aux | wc -l")
+                    print(f"\nTotal Processes: {procs}")
+                    top_cpu = self.run_cmd("ps aux --sort=-%cpu | head -5")
+                    print(f"\nTop CPU processes:\n{top_cpu}")
+                
+                elif cmd == 'logs':
+                    errors = self.run_cmd("grep -i error /var/log/syslog 2>/dev/null | tail -5")
+                    print(f"\nRecent system errors:")
+                    if errors:
+                        for err in errors.split('\n')[:5]:
+                            print(f"  {err[:70]}")
+                
+                else:
+                    self.error(f"Unknown command: {cmd}")
+                    print(f"Type 'help' for available commands\n")
+            
+            except KeyboardInterrupt:
+                print(f"\n{Colors.YELLOW}[Interrupted]{Colors.END}")
+            except Exception as e:
+                self.error(f"Error: {e}")
+    
+    def run(self):
+        """Main entry point"""
+        if len(sys.argv) > 1:
+            cmd = sys.argv[1].lower()
+            if cmd == 'fullaudit':
+                self.full_security_audit()
+            elif cmd == 'audit':
+                self.full_security_audit()
+            elif cmd == 'ports':
+                self.scan_ports_advanced()
+            elif cmd == 'network':
+                self.scan_network_advanced()
+            elif cmd == 'vulns':
+                self.scan_vulnerabilities()
+            elif cmd == 'malware':
+                self.scan_malware_advanced()
+            elif cmd == 'help':
+                self.show_help()
+            else:
+                self.interactive_shell()
+        else:
+            self.interactive_shell()
+
+if __name__ == "__main__":
+    shell = AdvancedValguard()
+    shell.run()
