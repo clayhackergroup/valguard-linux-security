@@ -575,7 +575,7 @@ We welcome your feedback and suggestions for improvements!
 [![Instagram exp1oit](https://img.shields.io/badge/Instagram-exp1oit-E4405F?style=for-the-badge&logo=instagram)](https://instagram.com/exp1oit)
 
 ### Telegram
-[![Telegram thunderguyind](https://img.shields.io/badge/Telegram-thunderguyind-0088cc?style=for-the-badge&logo=telegram)](https://t.me/thunderguyind)
+[![Telegram MeMrDefault](https://img.shields.io/badge/Telegram-thunderguyind-0088cc?style=for-the-badge&logo=telegram)](https://t.me/MeMrDefault)
 
 </div>
 
@@ -682,7 +682,7 @@ If you find VALGUARD useful:
 
 [![Instagram h4cker.in](https://img.shields.io/badge/-@h4cker.in-E4405F?style=flat-square&logo=instagram&logoColor=white)](https://instagram.com/h4cker.in)
 [![Instagram exp1oit](https://img.shields.io/badge/-@exp1oit-E4405F?style=flat-square&logo=instagram&logoColor=white)](https://instagram.com/exp1oit)
-[![Telegram](https://img.shields.io/badge/-@thunderguyind-0088cc?style=flat-square&logo=telegram&logoColor=white)](https://t.me/thunderguyind)
+[![Telegram](https://img.shields.io/badge/-@thunderguyind-0088cc?style=flat-square&logo=telegram&logoColor=white)](https://t.me/MeMrDefault)
 
 ---
 
